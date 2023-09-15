@@ -11,7 +11,7 @@ import { wdbRtc } from "@vlcn.io/sync-p2p";
 import { Ctx } from "./ctx";
 import { stringify as uuidStringify } from "uuid";
 
-type TestRecord = { id: string; name: string };
+type TestRecord = { site_id:string,  id: string; name: string };
 const wordOptions = { exactly: 3, join: " " };
 
 // Avoid peerjs ID already in use 
@@ -68,8 +68,8 @@ function App({ dbname }: { dbname: string }) {
   ).data;
 
   const addData = () => {
-    ctx.db.exec("INSERT INTO test (id, name) VALUES (?, ?);", [
-      nanoid(10),
+    ctx.db.exec("INSERT INTO test (name) VALUES (?);", [
+      // nanoid(10),
       randomWords(wordOptions) as string,
     ]);
   };
@@ -109,7 +109,7 @@ function App({ dbname }: { dbname: string }) {
           </thead>
           <tbody>
             {data.map((row) => (
-              <tr key={row.id}>
+              <tr key={`${row.site_id}${row.id}`}>
                 <td>{row.id}</td>
                 <td>
                   <EditableItem ctx={ctx} id={row.id} value={row.name} />
