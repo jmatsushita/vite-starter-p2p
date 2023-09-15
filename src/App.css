@@ -29,3 +29,46 @@
 .read-the-docs {
   color: #888;
 }
+
+
+.peers {
+  /* position: absolute;
+  right: 0px;
+  top: -100px;
+  width: 150px;
+  height: 100px; */
+  /* text-align: right; */
+  z-index: 100;
+}
+
+.connect {
+  display: inline-block;
+}
+
+.connect a {
+  display: block;
+}
+
+.connections {
+  display: inline-block;
+}
+
+.siteid {
+  /* position: absolute;
+  top: -100px;
+  left: 0px; */
+  z-index: 100;
+  width: 150px;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.pending {
+  color: #af5f13;
+  list-style: none;
+}
+
+.established {
+  color: green;
+  list-style: none;
+}

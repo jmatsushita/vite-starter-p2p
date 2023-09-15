@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { CtxAsync, useCachedState, useQuery, useSync } from "@vlcn.io/react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
@@ -5,30 +6,62 @@ import vlcnLogo from "./assets/vlcn.png";
 import "./App.css";
 import randomWords from "./support/randomWords.js";
 import { useDB } from "@vlcn.io/react";
-import SyncWorker from "./sync-worker.js?worker";
+import Peers from "./Peers";
+import { wdbRtc } from "@vlcn.io/sync-p2p";
+import { Ctx } from "./ctx";
+import { stringify as uuidStringify } from "uuid";
 
 type TestRecord = { id: string; name: string };
 const wordOptions = { exactly: 3, join: " " };
 
-function getEndpoint() {
-  let proto = "ws:";
-  const host = window.location.host;
-  if (window.location.protocol === "https:") {
-    proto = "wss:";
-  }
+// Avoid peerjs ID already in use 
+let didInit = false;
 
-  return `${proto}//${host}/sync`;
-}
-
-const worker = new SyncWorker();
 function App({ dbname }: { dbname: string }) {
   const ctx = useDB(dbname);
-  useSync({
-    dbname,
-    endpoint: getEndpoint(),
-    room: dbname,
-    worker,
-  });
+
+  const [siteid, setSiteid] = useState<string>("");
+  const [rtc, setRtc] = useState<Ctx["rtc"]>();
+
+  useEffect(() => {
+    let rtcVal: Awaited<ReturnType<typeof wdbRtc>>, cleanup: () => void;
+      
+    async function connect() {
+      const rtcVal = await wdbRtc(
+        ctx.db,
+        // window.location.hostname === "localhost"
+        //   ? {
+        //       host: "localhost",
+        //       port: 9000,
+        //       path: "/examples",
+        //     }
+        // : undefined
+      );
+      // console.log("rtc", rtcVal)
+      setRtc(rtcVal);
+
+      const [[r]] = await ctx.db.execA("SELECT crsql_site_id()");
+      // console.log("r", r)
+      const sid = uuidStringify(r);
+      // const sid = r.toString();
+      setSiteid(sid);
+      console.log("siteid", sid)
+      const [rows] = await ctx.db.execO("SELECT * FROM crsql_changes");
+      console.log("rows", rows)
+
+    }
+  
+    if (!didInit) {
+      didInit = true;
+      connect();
+      
+      return () => {
+        rtcVal?.dispose();
+        cleanup && cleanup();
+      };
+    };
+  }, [ctx.db]);
+
   const data = useQuery<TestRecord>(
     ctx,
     "SELECT * FROM test ORDER BY id DESC"
@@ -45,6 +78,8 @@ function App({ dbname }: { dbname: string }) {
     ctx.db.exec("DELETE FROM test;");
   };
 
+  if (!rtc || !siteid) return <div>Loading...</div>;
+
   return (
     <>
       <div>
@@ -60,6 +95,7 @@ function App({ dbname }: { dbname: string }) {
       </div>
       <h1>Vite + React + Vulcan</h1>
       <div className="card">
+        <Peers ctx={{db: ctx.db, rx: ctx.rx, siteid, rtc }} />
         <button onClick={addData} style={{ marginRight: "1em" }}>
           Add Data
         </button>
