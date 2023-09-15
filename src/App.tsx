@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CtxAsync, useCachedState, useQuery, useSync } from "@vlcn.io/react";
+import { CtxAsync, useCachedState, useQuery } from "@vlcn.io/react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import vlcnLogo from "./assets/vlcn.png";
@@ -17,6 +17,7 @@ const wordOptions = { exactly: 3, join: " " };
 // Avoid peerjs ID already in use 
 let didInit = false;
 
+let cnt = 0;
 function App({ dbname }: { dbname: string }) {
   const ctx = useDB(dbname);
 
@@ -68,8 +69,9 @@ function App({ dbname }: { dbname: string }) {
   ).data;
 
   const addData = () => {
-    ctx.db.exec("INSERT INTO test (name) VALUES (?);", [
+    ctx.db.exec("INSERT INTO test (id, name) VALUES (?, ?);", [
       // nanoid(10),
+      cnt++,
       randomWords(wordOptions) as string,
     ]);
   };
